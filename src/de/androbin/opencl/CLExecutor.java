@@ -17,7 +17,7 @@ import org.lwjgl.opencl.*;
 public final class CLExecutor
 {
 	private static CLContext		context;
-	private static List<CLDevice>	devices;
+	private static CLDevice			device;
 	private static CLCommandQueue	queue;
 	
 	public final CLProgram			program;
@@ -30,13 +30,15 @@ public final class CLExecutor
 	
 	public CLExecutor( final String name, final String path ) throws IOException, LWJGLException
 	{
-		final IntBuffer error = BufferUtils.createIntBuffer( 1 );
+		final IntBuffer error = createIntBuffer( 1 );
 		final InputStream input = ResourceLoader.class.getResourceAsStream( "/cls/" + path );
+		
 		program = clCreateProgramWithSource( context, read( new InputStreamReader( input ) ), error );
 		input.close();
-		checkCLError( error.get( 0 ) );
 		
-		checkCLError( clBuildProgram( program, devices.get( 0 ), "", null ) );
+		checkCLError( error.get( 0 ) );
+		checkCLError( clBuildProgram( program, device, "", null ) );
+		
 		kernel = clCreateKernel( program, name, null );
 	}
 	
@@ -46,19 +48,9 @@ public final class CLExecutor
 		clReleaseProgram( program );
 	}
 	
-	public static CLMem createReadOnlyBuffer( final int size, final int bytes )
+	public static CLMem createBuffer( final Buffer buffer, final long flags )
 	{
-		final IntBuffer error = BufferUtils.createIntBuffer( 1 );
-		final CLMem mem = clCreateBuffer( context, CL_MEM_READ_ONLY, size * bytes, error );
-		checkCLError( error.get( 0 ) );
-		return mem;
-	}
-	
-	public static CLMem createWriteOnlyBuffer( final Buffer buffer )
-	{
-		final long flags = CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR;
-		
-		final IntBuffer error = BufferUtils.createIntBuffer( 1 );
+		final IntBuffer error = createIntBuffer( 1 );
 		final CLMem mem;
 		
 		/**/ if ( buffer instanceof ByteBuffer )
@@ -94,6 +86,24 @@ public final class CLExecutor
 		return mem;
 	}
 	
+	public static CLMem createReadAndWriteBuffer( final Buffer buffer )
+	{
+		return createBuffer( buffer, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR );
+	}
+	
+	public static CLMem createReadOnlyBuffer( final int size, final int bytes )
+	{
+		final IntBuffer error = createIntBuffer( 1 );
+		final CLMem mem = clCreateBuffer( context, CL_MEM_READ_ONLY, size * bytes, error );
+		checkCLError( error.get( 0 ) );
+		return mem;
+	}
+	
+	public static CLMem createWriteOnlyBuffer( final Buffer buffer )
+	{
+		return createBuffer( buffer, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR );
+	}
+	
 	public static void destroyCL()
 	{
 		clReleaseCommandQueue( queue );
@@ -107,7 +117,6 @@ public final class CLExecutor
 		globalWorkSize.put( 0, size );
 		
 		clEnqueueNDRangeKernel( queue, kernel, 1, null, globalWorkSize, null, null, null );
-		clFinish( queue );
 	}
 	
 	public static void enqueueCopyBuffer( final CLMem src, final CLMem dst, final int size )
@@ -117,34 +126,34 @@ public final class CLExecutor
 	
 	public static ByteBuffer enqueueMapBuffer( final CLMem memory, final PointerBuffer buffer )
 	{
-		return clEnqueueMapBuffer( queue, memory, CL_TRUE, 0, 0, buffer.limit(), null, null, null );
+		return clEnqueueMapBuffer( queue, memory, CL_FALSE, 0, 0, buffer.limit(), null, null, null );
 	}
 	
 	public static void enqueueReadBuffer( final CLMem memory, final Buffer buffer )
 	{
 		/**/ if ( buffer instanceof ByteBuffer )
 		{
-			clEnqueueReadBuffer( queue, memory, CL_TRUE, 0, (ByteBuffer) buffer, null, null );
+			clEnqueueReadBuffer( queue, memory, CL_FALSE, 0, (ByteBuffer) buffer, null, null );
 		}
 		else if ( buffer instanceof DoubleBuffer )
 		{
-			clEnqueueReadBuffer( queue, memory, CL_TRUE, 0, (DoubleBuffer) buffer, null, null );
+			clEnqueueReadBuffer( queue, memory, CL_FALSE, 0, (DoubleBuffer) buffer, null, null );
 		}
 		else if ( buffer instanceof FloatBuffer )
 		{
-			clEnqueueReadBuffer( queue, memory, CL_TRUE, 0, (FloatBuffer) buffer, null, null );
+			clEnqueueReadBuffer( queue, memory, CL_FALSE, 0, (FloatBuffer) buffer, null, null );
 		}
 		else if ( buffer instanceof IntBuffer )
 		{
-			clEnqueueReadBuffer( queue, memory, CL_TRUE, 0, (IntBuffer) buffer, null, null );
+			clEnqueueReadBuffer( queue, memory, CL_FALSE, 0, (IntBuffer) buffer, null, null );
 		}
 		else if ( buffer instanceof LongBuffer )
 		{
-			clEnqueueReadBuffer( queue, memory, CL_TRUE, 0, (LongBuffer) buffer, null, null );
+			clEnqueueReadBuffer( queue, memory, CL_FALSE, 0, (LongBuffer) buffer, null, null );
 		}
 		else if ( buffer instanceof ShortBuffer )
 		{
-			clEnqueueReadBuffer( queue, memory, CL_TRUE, 0, (ShortBuffer) buffer, null, null );
+			clEnqueueReadBuffer( queue, memory, CL_FALSE, 0, (ShortBuffer) buffer, null, null );
 		}
 	}
 	
@@ -152,27 +161,27 @@ public final class CLExecutor
 	{
 		/**/ if ( buffer instanceof ByteBuffer )
 		{
-			clEnqueueWriteBuffer( queue, memory, CL_TRUE, 0, (ByteBuffer) buffer, null, null );
+			clEnqueueWriteBuffer( queue, memory, CL_FALSE, 0, (ByteBuffer) buffer, null, null );
 		}
 		else if ( buffer instanceof DoubleBuffer )
 		{
-			clEnqueueWriteBuffer( queue, memory, CL_TRUE, 0, (DoubleBuffer) buffer, null, null );
+			clEnqueueWriteBuffer( queue, memory, CL_FALSE, 0, (DoubleBuffer) buffer, null, null );
 		}
 		else if ( buffer instanceof FloatBuffer )
 		{
-			clEnqueueWriteBuffer( queue, memory, CL_TRUE, 0, (FloatBuffer) buffer, null, null );
+			clEnqueueWriteBuffer( queue, memory, CL_FALSE, 0, (FloatBuffer) buffer, null, null );
 		}
 		else if ( buffer instanceof IntBuffer )
 		{
-			clEnqueueWriteBuffer( queue, memory, CL_TRUE, 0, (IntBuffer) buffer, null, null );
+			clEnqueueWriteBuffer( queue, memory, CL_FALSE, 0, (IntBuffer) buffer, null, null );
 		}
 		else if ( buffer instanceof LongBuffer )
 		{
-			clEnqueueWriteBuffer( queue, memory, CL_TRUE, 0, (LongBuffer) buffer, null, null );
+			clEnqueueWriteBuffer( queue, memory, CL_FALSE, 0, (LongBuffer) buffer, null, null );
 		}
 		else if ( buffer instanceof ShortBuffer )
 		{
-			clEnqueueWriteBuffer( queue, memory, CL_TRUE, 0, (ShortBuffer) buffer, null, null );
+			clEnqueueWriteBuffer( queue, memory, CL_FALSE, 0, (ShortBuffer) buffer, null, null );
 		}
 	}
 	
@@ -183,15 +192,38 @@ public final class CLExecutor
 		super.finalize();
 	}
 	
+	public static void finish()
+	{
+		clFinish( queue );
+	}
+	
+	public static void flush()
+	{
+		clFlush( queue );
+	}
+	
 	public static void initCL() throws LWJGLException
 	{
-		final IntBuffer error = BufferUtils.createIntBuffer( 1 );
+		initCL( 0 );
+	}
+	
+	public static void initCL( final int platformId ) throws LWJGLException
+	{
+		initCL( platformId, 0 );
+	}
+	
+	public static void initCL( final int platformId, final int deviceId ) throws LWJGLException
+	{
 		create();
 		
-		final CLPlatform platform = getPlatforms().get( 0 );
-		devices = platform.getDevices( CL_DEVICE_TYPE_GPU );
+		final CLPlatform platform = getPlatforms().get( platformId );
+		final List<CLDevice> devices = platform.getDevices( CL_DEVICE_TYPE_GPU );
+		
 		context = create( platform, devices, null );
-		queue = clCreateCommandQueue( context, devices.get( 0 ), CL_QUEUE_PROFILING_ENABLE, error );
+		device = devices.get( deviceId );
+		
+		final IntBuffer error = createIntBuffer( 1 );
+		queue = clCreateCommandQueue( context, devices.get( deviceId ), CL_QUEUE_PROFILING_ENABLE, error );
 		checkCLError( error.get( 0 ) );
 	}
 }
