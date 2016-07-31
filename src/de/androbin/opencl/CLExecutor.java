@@ -223,7 +223,7 @@ public final class CLExecutor
 		device = devices.get( deviceId );
 		
 		final IntBuffer error = createIntBuffer( 1 );
-		queue = clCreateCommandQueue( context, devices.get( deviceId ), CL_QUEUE_PROFILING_ENABLE, error );
+		queue = clCreateCommandQueue( context, devices.get( deviceId ), 0, error );
 		checkCLError( error.get( 0 ) );
 	}
 }
