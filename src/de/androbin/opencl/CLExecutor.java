@@ -1,6 +1,6 @@
 package de.androbin.opencl;
 
-import static de.androbin.util.FileUtil.*;
+import static de.androbin.io.util.FileUtil.*;
 import static org.lwjgl.BufferUtils.*;
 import static org.lwjgl.opencl.CL.*;
 import static org.lwjgl.opencl.CL10.*;
@@ -30,7 +30,6 @@ public final class CLExecutor
 	
 	public CLExecutor( final String name, final String path ) throws IOException
 	{
-		final IntBuffer error = createIntBuffer( 1 );
 		final InputStream input = ResourceLoader.class.getResourceAsStream( "/cls/" + path );
 		
 		if ( input == null )
@@ -38,6 +37,7 @@ public final class CLExecutor
 			throw new FileNotFoundException( "File '/cls/" + path + "' cannot be found" );
 		}
 		
+		final IntBuffer error = createIntBuffer( 1 );
 		program = clCreateProgramWithSource( context, read( input ), error );
 		input.close();
 		
