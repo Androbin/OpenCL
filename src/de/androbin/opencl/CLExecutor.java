@@ -23,17 +23,22 @@ public final class CLExecutor
 	public final CLProgram			program;
 	public final CLKernel			kernel;
 	
-	public CLExecutor( final String name ) throws IOException, LWJGLException
+	public CLExecutor( final String name ) throws IOException
 	{
 		this( name, name + ".cls" );
 	}
 	
-	public CLExecutor( final String name, final String path ) throws IOException, LWJGLException
+	public CLExecutor( final String name, final String path ) throws IOException
 	{
 		final IntBuffer error = createIntBuffer( 1 );
 		final InputStream input = ResourceLoader.class.getResourceAsStream( "/cls/" + path );
 		
-		program = clCreateProgramWithSource( context, read( new InputStreamReader( input ) ), error );
+		if ( input == null )
+		{
+			throw new FileNotFoundException( "File '/cls/" + path + "' cannot be found" );
+		}
+		
+		program = clCreateProgramWithSource( context, read( input ), error );
 		input.close();
 		
 		checkCLError( error.get( 0 ) );
@@ -183,13 +188,6 @@ public final class CLExecutor
 		{
 			clEnqueueWriteBuffer( queue, memory, CL_FALSE, 0, (ShortBuffer) buffer, null, null );
 		}
-	}
-	
-	@ Override
-	protected void finalize() throws Throwable
-	{
-		cleanup();
-		super.finalize();
 	}
 	
 	public static void finish()
