@@ -62,10 +62,18 @@ public final class CLExecutor
 	
 	public void execute( final int size )
 	{
+		execute( size, 1 );
+	}
+	
+	public void execute( final int size, final int n )
+	{
 		final PointerBuffer globalWorkSize = createPointerBuffer( 1 );
 		globalWorkSize.put( 0, size );
 		
-		clEnqueueNDRangeKernel( queue, kernel, 1, null, globalWorkSize, null, null, null );
+		for ( int i = 0; i < n; i++ )
+		{
+			clEnqueueNDRangeKernel( queue, kernel, 1, null, globalWorkSize, null, null, null );
+		}
 	}
 	
 	public static void finish()
