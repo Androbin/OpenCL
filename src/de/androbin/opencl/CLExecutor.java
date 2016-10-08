@@ -1,16 +1,18 @@
 package de.androbin.opencl;
 
-import static de.androbin.io.util.FileUtil.*;
+import static de.androbin.io.util.FileReaderUtil.*;
 import static org.lwjgl.BufferUtils.*;
 import static org.lwjgl.opencl.CL.*;
+import static org.lwjgl.opencl.CL.create;
 import static org.lwjgl.opencl.CL10.*;
 import static org.lwjgl.opencl.CLContext.create;
 import static org.lwjgl.opencl.CLPlatform.*;
 import static org.lwjgl.opencl.Util.*;
-import com.sun.xml.internal.ws.api.*;
 import java.io.*;
+import java.net.*;
 import java.nio.*;
 import java.util.*;
+import java.util.function.*;
 import org.lwjgl.*;
 import org.lwjgl.opencl.*;
 
@@ -30,13 +32,14 @@ public final class CLExecutor
 	
 	public CLExecutor( final String name, final String path ) throws IOException
 	{
-		final InputStream input = ResourceLoader.class.getResourceAsStream( "/cls/" + path );
+		final URL res = ClassLoader.getSystemResource( "cls/" + path );
 		
-		if ( input == null )
+		if ( res == null )
 		{
 			throw new FileNotFoundException( "File '/cls/" + path + "' cannot be found" );
 		}
 		
+		final InputStream input = res.openStream();
 		final IntBuffer error = createIntBuffer( 1 );
 		program = clCreateProgramWithSource( context, read( input ), error );
 		input.close();
@@ -62,7 +65,10 @@ public final class CLExecutor
 	
 	public void execute( final int size )
 	{
-		execute( size, 1 );
+		final PointerBuffer globalWorkSize = createPointerBuffer( 1 );
+		globalWorkSize.put( 0, size );
+		
+		clEnqueueNDRangeKernel( queue, kernel, 1, null, globalWorkSize, null, null, null );
 	}
 	
 	public void execute( final int size, final int n )
@@ -72,6 +78,18 @@ public final class CLExecutor
 		
 		for ( int i = 0; i < n; i++ )
 		{
+			clEnqueueNDRangeKernel( queue, kernel, 1, null, globalWorkSize, null, null, null );
+		}
+	}
+	
+	public void execute( final int size, final int n, final IntConsumer foo )
+	{
+		final PointerBuffer globalWorkSize = createPointerBuffer( 1 );
+		globalWorkSize.put( 0, size );
+		
+		for ( int i = 0; i < n; i++ )
+		{
+			foo.accept( i );
 			clEnqueueNDRangeKernel( queue, kernel, 1, null, globalWorkSize, null, null, null );
 		}
 	}
