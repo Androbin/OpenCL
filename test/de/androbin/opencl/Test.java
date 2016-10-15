@@ -22,7 +22,7 @@ public final class Test
 	{
 		try
 		{
-			initCL();
+			initCL( 0, 0, null );
 		}
 		catch ( final LWJGLException e )
 		{
