@@ -5,6 +5,7 @@ import static org.lwjgl.BufferUtils.*;
 import static org.lwjgl.opencl.CL.*;
 import static org.lwjgl.opencl.CL.create;
 import static org.lwjgl.opencl.CL10.*;
+import static org.lwjgl.opencl.CL10GL.*;
 import static org.lwjgl.opencl.CLContext.create;
 import static org.lwjgl.opencl.CLPlatform.*;
 import static org.lwjgl.opencl.Util.*;
@@ -15,6 +16,7 @@ import java.util.*;
 import java.util.function.*;
 import org.lwjgl.*;
 import org.lwjgl.opencl.*;
+import org.lwjgl.opengl.*;
 
 public final class CLExecutor
 {
@@ -48,6 +50,11 @@ public final class CLExecutor
 		checkCLError( clBuildProgram( program, device, "", null ) );
 		
 		kernel = clCreateKernel( program, name, null );
+	}
+	
+	public static void acquire( final CLMem mem )
+	{
+		clEnqueueAcquireGLObjects( queue, mem, null, null );
 	}
 	
 	public void cleanup()
@@ -104,28 +111,23 @@ public final class CLExecutor
 		clFlush( queue );
 	}
 	
-	public static void initCL() throws LWJGLException
-	{
-		initCL( 0 );
-	}
-	
-	public static void initCL( final int platformId ) throws LWJGLException
-	{
-		initCL( platformId, 0 );
-	}
-	
-	public static void initCL( final int platformId, final int deviceId ) throws LWJGLException
+	public static void initCL( final int platformId, final int deviceId, final Drawable drawable ) throws LWJGLException
 	{
 		create();
 		
 		final CLPlatform platform = getPlatforms().get( platformId );
 		final List<CLDevice> devices = platform.getDevices( CL_DEVICE_TYPE_GPU );
 		
-		context = create( platform, devices, null );
+		context = create( platform, devices, null, drawable, null );
 		device = devices.get( deviceId );
 		
 		final IntBuffer error = createIntBuffer( 1 );
 		queue = clCreateCommandQueue( context, devices.get( deviceId ), 0, error );
 		checkCLError( error.get( 0 ) );
+	}
+	
+	public static void release( final CLMem mem )
+	{
+		clEnqueueReleaseGLObjects( queue, mem, null, null );
 	}
 }

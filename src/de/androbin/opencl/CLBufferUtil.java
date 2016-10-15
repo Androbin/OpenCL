@@ -3,6 +3,7 @@ package de.androbin.opencl;
 import static de.androbin.opencl.CLExecutor.*;
 import static org.lwjgl.BufferUtils.*;
 import static org.lwjgl.opencl.CL10.*;
+import static org.lwjgl.opencl.CL10GL.*;
 import static org.lwjgl.opencl.Util.*;
 import java.nio.*;
 import org.lwjgl.*;
@@ -50,6 +51,16 @@ public final class CLBufferUtil
 		
 		checkCLError( error.get( 0 ) );
 		return mem;
+	}
+	
+	public static CLMem createFromGLBuffer( final int bufferId, final long flags )
+	{
+		return clCreateFromGLBuffer( context, flags, bufferId, null );
+	}
+	
+	public static CLMem createFromGLReadAndWriteBuffer( final int bufferId )
+	{
+		return createFromGLBuffer( bufferId, CL_MEM_READ_WRITE );
 	}
 	
 	public static CLMem createReadAndWriteBuffer( final Buffer buffer )
