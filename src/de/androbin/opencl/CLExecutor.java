@@ -3,17 +3,13 @@ package de.androbin.opencl;
 import static de.androbin.io.util.FileReaderUtil.*;
 import static org.lwjgl.BufferUtils.*;
 import static org.lwjgl.opencl.CL.*;
-import static org.lwjgl.opencl.CL.create;
 import static org.lwjgl.opencl.CL10.*;
 import static org.lwjgl.opencl.CL10GL.*;
 import static org.lwjgl.opencl.CLContext.create;
 import static org.lwjgl.opencl.CLPlatform.*;
-import static org.lwjgl.opencl.Util.*;
 import java.io.*;
 import java.net.*;
-import java.nio.*;
 import java.util.*;
-import java.util.function.*;
 import org.lwjgl.*;
 import org.lwjgl.opencl.*;
 import org.lwjgl.opengl.*;
@@ -41,14 +37,8 @@ public final class CLExecutor
 			throw new FileNotFoundException( "File '/cls/" + path + "' cannot be found" );
 		}
 		
-		final InputStream input = res.openStream();
-		final IntBuffer error = createIntBuffer( 1 );
-		program = clCreateProgramWithSource( context, read( input ), error );
-		input.close();
-		
-		checkCLError( error.get( 0 ) );
-		checkCLError( clBuildProgram( program, device, "", null ) );
-		
+		program = clCreateProgramWithSource( context, read( res ), null );
+		clBuildProgram( program, device, "", null );
 		kernel = clCreateKernel( program, name, null );
 	}
 	
@@ -70,34 +60,46 @@ public final class CLExecutor
 		destroy();
 	}
 	
-	public void execute( final int size )
+	public void execute( final int ... dim )
 	{
-		final PointerBuffer globalWorkSize = createPointerBuffer( 1 );
-		globalWorkSize.put( 0, size );
+		final PointerBuffer globalWorkSize = createPointerBuffer( dim.length );
 		
-		clEnqueueNDRangeKernel( queue, kernel, 1, null, globalWorkSize, null, null, null );
+		for ( int i = 0; i < dim.length; i++ )
+		{
+			globalWorkSize.put( i, dim[ i ] );
+		}
+		
+		clEnqueueNDRangeKernel( queue, kernel, dim.length, null, globalWorkSize, null, null, null );
 	}
 	
-	public void execute( final int size, final int n )
+	public void executeN( final int n, final int ... dim )
 	{
-		final PointerBuffer globalWorkSize = createPointerBuffer( 1 );
-		globalWorkSize.put( 0, size );
+		final PointerBuffer globalWorkSize = createPointerBuffer( dim.length );
+		
+		for ( int i = 0; i < dim.length; i++ )
+		{
+			globalWorkSize.put( i, dim[ i ] );
+		}
 		
 		for ( int i = 0; i < n; i++ )
 		{
-			clEnqueueNDRangeKernel( queue, kernel, 1, null, globalWorkSize, null, null, null );
+			clEnqueueNDRangeKernel( queue, kernel, dim.length, null, globalWorkSize, null, null, null );
 		}
 	}
 	
-	public void execute( final int size, final int n, final IntConsumer foo )
+	public void executeI( final int n, final int index, final int ... dim )
 	{
-		final PointerBuffer globalWorkSize = createPointerBuffer( 1 );
-		globalWorkSize.put( 0, size );
+		final PointerBuffer globalWorkSize = createPointerBuffer( dim.length );
+		
+		for ( int i = 0; i < dim.length; i++ )
+		{
+			globalWorkSize.put( i, dim[ i ] );
+		}
 		
 		for ( int i = 0; i < n; i++ )
 		{
-			foo.accept( i );
-			clEnqueueNDRangeKernel( queue, kernel, 1, null, globalWorkSize, null, null, null );
+			kernel.setArg( index, i );
+			clEnqueueNDRangeKernel( queue, kernel, dim.length, null, globalWorkSize, null, null, null );
 		}
 	}
 	
@@ -120,10 +122,7 @@ public final class CLExecutor
 		
 		context = create( platform, devices, null, drawable, null );
 		device = devices.get( deviceId );
-		
-		final IntBuffer error = createIntBuffer( 1 );
-		queue = clCreateCommandQueue( context, devices.get( deviceId ), 0, error );
-		checkCLError( error.get( 0 ) );
+		queue = clCreateCommandQueue( context, device, 0, null );
 	}
 	
 	public static void release( final CLMem mem )
