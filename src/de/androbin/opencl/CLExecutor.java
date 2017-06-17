@@ -39,7 +39,7 @@ public final class CLExecutor {
     if ( res == null ) {
       throw new FileNotFoundException( "File '/cls/" + path + "' could not be found" );
     }
-
+    
     final IntBuffer error = createIntBuffer( 1 );
     program = clCreateProgramWithSource( context, read( res ), error );
     checkCLError( clBuildProgram( program, device, options, null ) );
@@ -69,8 +69,8 @@ public final class CLExecutor {
       globalWorkSize.put( i, dim[ i ] );
     }
     
-    checkCLError( clEnqueueNDRangeKernel( queue, kernel, dim.length, null, globalWorkSize, null,
-        null, null ) );
+    checkCLError( clEnqueueNDRangeKernel( queue, kernel, dim.length,
+        null, globalWorkSize, null, null, null ) );
   }
   
   public void executeBorder( final int ... dim ) {
@@ -82,8 +82,8 @@ public final class CLExecutor {
       globalWorkSize.put( i, dim[ i ] - 2 );
     }
     
-    checkCLError( clEnqueueNDRangeKernel( queue, kernel, dim.length, globalWorkOffset,
-        globalWorkSize, null, null, null ) );
+    checkCLError( clEnqueueNDRangeKernel( queue, kernel, dim.length,
+        globalWorkOffset, globalWorkSize, null, null, null ) );
   }
   
   public void executeN( final int n, final int ... dim ) {
@@ -94,8 +94,8 @@ public final class CLExecutor {
     }
     
     for ( int i = 0; i < n; i++ ) {
-      checkCLError( clEnqueueNDRangeKernel( queue, kernel, dim.length, null, globalWorkSize, null,
-          null, null ) );
+      checkCLError( clEnqueueNDRangeKernel( queue, kernel, dim.length,
+          null, globalWorkSize, null, null, null ) );
     }
   }
   
@@ -109,8 +109,8 @@ public final class CLExecutor {
     }
     
     for ( int i = 0; i < n; i++ ) {
-      checkCLError( clEnqueueNDRangeKernel( queue, kernel, dim.length, globalWorkOffset,
-          globalWorkSize, null, null, null ) );
+      checkCLError( clEnqueueNDRangeKernel( queue, kernel, dim.length,
+          globalWorkOffset, globalWorkSize, null, null, null ) );
     }
   }
   
@@ -123,8 +123,8 @@ public final class CLExecutor {
     
     for ( int i = 0; i < n; i++ ) {
       kernel.setArg( index, i );
-      checkCLError( clEnqueueNDRangeKernel( queue, kernel, dim.length, null, globalWorkSize, null,
-          null, null ) );
+      checkCLError( clEnqueueNDRangeKernel( queue, kernel, dim.length,
+          null, globalWorkSize, null, null, null ) );
     }
   }
   
@@ -139,8 +139,8 @@ public final class CLExecutor {
     
     for ( int i = 0; i < n; i++ ) {
       kernel.setArg( index, i );
-      checkCLError( clEnqueueNDRangeKernel( queue, kernel, dim.length, globalWorkOffset,
-          globalWorkSize, null, null, null ) );
+      checkCLError( clEnqueueNDRangeKernel( queue, kernel, dim.length,
+          globalWorkOffset, globalWorkSize, null, null, null ) );
     }
   }
   
@@ -158,7 +158,7 @@ public final class CLExecutor {
     
     final CLPlatform platform = getPlatforms().get( platformId );
     final List<CLDevice> devices = platform.getDevices( CL_DEVICE_TYPE_GPU );
-
+    
     final IntBuffer error = createIntBuffer( 1 );
     context = create( platform, devices, null, drawable, error );
     device = devices.get( deviceId );

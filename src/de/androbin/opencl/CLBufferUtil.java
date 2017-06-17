@@ -92,7 +92,8 @@ public final class CLBufferUtil {
   
   public static ByteBuffer mapBuffer( final CLMem memory, final int size ) {
     final IntBuffer error = createIntBuffer( 1 );
-    final ByteBuffer buffer = clEnqueueMapBuffer( queue, memory, CL_FALSE, 0, 0, size, null, null, error );
+    final ByteBuffer buffer = clEnqueueMapBuffer( queue, memory, CL_FALSE, 0, 0, size,
+        null, null, error );
     checkCLError( error.get( 0 ) );
     return buffer;
   }
