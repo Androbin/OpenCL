@@ -5,11 +5,9 @@ import static org.lwjgl.BufferUtils.*;
 import static org.lwjgl.opencl.CL.*;
 import static org.lwjgl.opencl.CL10.*;
 import static org.lwjgl.opencl.CL10GL.*;
-import static org.lwjgl.opencl.CLContext.*;
 import static org.lwjgl.opencl.CLPlatform.*;
 import static org.lwjgl.opencl.Util.*;
 import java.io.*;
-import java.net.*;
 import java.nio.*;
 import java.util.*;
 import org.lwjgl.*;
@@ -34,14 +32,14 @@ public final class CLExecutor {
   
   public CLExecutor( final String name, final String path, final CharSequence options )
       throws IOException {
-    final URL res = ClassLoader.getSystemResource( "cls/" + path );
+    final String source = read( "cls/" + path );
     
-    if ( res == null ) {
-      throw new FileNotFoundException( "File '/cls/" + path + "' could not be found" );
+    if ( source == null ) {
+      throw new IOException( "File 'cls/" + path + "' could not be read" );
     }
     
     final IntBuffer error = createIntBuffer( 1 );
-    program = clCreateProgramWithSource( context, read( res ), error );
+    program = clCreateProgramWithSource( context, source, error );
     checkCLError( clBuildProgram( program, device, options, null ) );
     kernel = clCreateKernel( program, name, error );
     checkCLError( error.get( 0 ) );
@@ -160,7 +158,7 @@ public final class CLExecutor {
     final List<CLDevice> devices = platform.getDevices( CL_DEVICE_TYPE_GPU );
     
     final IntBuffer error = createIntBuffer( 1 );
-    context = create( platform, devices, null, drawable, error );
+    context = CLContext.create( platform, devices, null, drawable, error );
     device = devices.get( deviceId );
     queue = clCreateCommandQueue( context, device, 0, error );
     checkCLError( error.get( 0 ) );
