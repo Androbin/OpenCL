@@ -23,19 +23,19 @@ public final class CLExecutor {
   public final CLKernel kernel;
   
   public CLExecutor( final String name ) throws IOException {
-    this( name, name + ".cls" );
+    this( name, "" );
   }
   
-  public CLExecutor( final String name, final String path ) throws IOException {
-    this( name, path, "" );
+  public CLExecutor( final String name, final CharSequence options ) throws IOException {
+    this( name, "cls/" + name + ".cls", options );
   }
   
   public CLExecutor( final String name, final String path, final CharSequence options )
       throws IOException {
-    final String source = read( "cls/" + path );
+    final String source = read( path );
     
     if ( source == null ) {
-      throw new IOException( "File 'cls/" + path + "' could not be read" );
+      throw new IOException( "File '" + path + "' could not be read" );
     }
     
     final IntBuffer error = createIntBuffer( 1 );
@@ -55,8 +55,18 @@ public final class CLExecutor {
   }
   
   public static void destroyCL() {
-    checkCLError( clReleaseCommandQueue( queue ) );
-    checkCLError( clReleaseContext( context ) );
+    if ( queue != null ) {
+      checkCLError( clReleaseCommandQueue( queue ) );
+      queue = null;
+    }
+    
+    device = null;
+    
+    if ( context != null ) {
+      checkCLError( clReleaseContext( context ) );
+      context = null;
+    }
+    
     destroy();
   }
   
@@ -162,6 +172,8 @@ public final class CLExecutor {
     device = devices.get( deviceId );
     queue = clCreateCommandQueue( context, device, 0, error );
     checkCLError( error.get( 0 ) );
+    
+    Runtime.getRuntime().addShutdownHook( new Thread( CLExecutor::destroyCL ) );
   }
   
   public static void releaseGL( final CLMem mem ) {
