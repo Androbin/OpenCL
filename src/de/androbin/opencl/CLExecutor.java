@@ -1,5 +1,6 @@
 package de.androbin.opencl;
 
+import de.androbin.lwjgl.util.BufferUtil;
 import static de.androbin.io.util.FileReaderUtil.*;
 import static org.lwjgl.BufferUtils.*;
 import static org.lwjgl.opencl.CL.*;
@@ -40,7 +41,27 @@ public final class CLExecutor {
     
     final IntBuffer error = createIntBuffer( 1 );
     program = clCreateProgramWithSource( context, source, error );
-    checkCLError( clBuildProgram( program, device, options, null ) );
+    checkCLError( error.get( 0 ) );
+    
+    final int buildError = clBuildProgram( program, device, options, null );
+    
+    final PointerBuffer logSize = createPointerBuffer( 1 );
+    clGetProgramBuildInfo( program, device, CL10.CL_PROGRAM_BUILD_LOG, null, logSize );
+    
+    final ByteBuffer log = createByteBuffer( (int) logSize.get() );
+    clGetProgramBuildInfo( program, device, CL10.CL_PROGRAM_BUILD_LOG, log, null );
+    
+    final byte[] logRaw = new byte[ log.capacity() ];
+    BufferUtil.getBuffer( log, logRaw );
+    
+    final String logString = new String( logRaw ).trim();
+    
+    if ( !logString.isEmpty() ) {
+      System.err.println( logString );
+    }
+    
+    checkCLError( buildError );
+    
     kernel = clCreateKernel( program, name, error );
     checkCLError( error.get( 0 ) );
   }
